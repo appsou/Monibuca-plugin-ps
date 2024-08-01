@@ -348,6 +348,7 @@ func (p *PSPublisher) Receive(streamPath, dump, port string, ssrc uint32, reuse 
 		switch protocol {
 		case "tcp":
 			var tcpConf config.TCP
+			tcpConf.ListenNum = 1
 			tcpConf.ListenAddr = listenaddr
 			if reuse {
 				if _, ok := conf.shareTCP.LoadOrStore(listenaddr, &tcpConf); ok {
