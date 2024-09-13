@@ -347,10 +347,10 @@ func (p *PSPublisher) Receive(streamPath, dump, port string, ssrc uint32, reuse 
 		}
 		switch protocol {
 		case "tcp":
-			var tcpConf config.TCP
-			tcpConf.ListenNum = 1
-			tcpConf.ListenAddr = listenaddr
 			if reuse {
+				var tcpConf config.TCP
+				tcpConf.ListenNum = 1
+				tcpConf.ListenAddr = listenaddr
 				if _, ok := conf.shareTCP.LoadOrStore(listenaddr, &tcpConf); ok {
 				} else {
 					go func() {
@@ -359,8 +359,20 @@ func (p *PSPublisher) Receive(streamPath, dump, port string, ssrc uint32, reuse 
 					}()
 				}
 			} else {
-				tcpConf.ListenNum = 1
-				go tcpConf.ListenTCP(p, p)
+				go func(){
+					l, err := net.Listen("tcp", listenaddr)
+					if err != nil {
+						p.Stop(zap.Error(err))
+						return
+					}
+					conn, err := l.Accept()
+					if err != nil {
+						p.Stop(zap.Error(err))
+						return
+					}
+					p.ServeTCP(conn)
+					l.Close()
+				}()
 			}
 		case "udp":
 			if reuse {
